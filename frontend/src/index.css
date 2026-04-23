@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 14px;
+  }
+
+  body {
+    background-color: #0f1117;
+    color: #e8eaf0;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0f1117; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+  /* Focus rings */
+  :focus-visible {
+    outline: 2px solid #d4a84b;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* ── Layout ── */
+  .app-layout { @apply flex min-h-screen bg-bg; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    @apply w-60 bg-surface border-r border-border flex flex-col flex-shrink-0;
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    z-index: 40;
+  }
+  .sidebar-logo {
+    @apply px-5 py-4 border-b border-border flex items-center gap-3;
+  }
+  .sidebar-nav { @apply flex-1 overflow-y-auto py-3 px-2; }
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded text-muted text-sm
+           hover:bg-surface2 hover:text-ink transition-colors cursor-pointer mb-0.5;
+  }
+  .nav-item.active { @apply bg-gold-dim text-gold border border-gold-border; }
+  .nav-badge {
+    @apply ml-auto text-xs bg-amber text-bg px-1.5 py-0.5 rounded-full font-mono font-medium;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    @apply fixed top-0 right-0 h-14 bg-surface border-b border-border
+           flex items-center px-6 gap-4 z-30;
+    left: 240px;
+  }
+
+  /* ── Main content ── */
+  .main-content {
+    @apply flex-1 overflow-auto;
+    margin-left: 240px;
+    padding-top: 56px;
+  }
+  .page-container { @apply p-6 max-w-7xl mx-auto; }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-surface border border-border rounded-lg p-5;
+  }
+  .card-header {
+    @apply flex items-center justify-between mb-4 pb-3 border-b border-border;
+  }
+  .card-title { @apply text-base font-semibold text-ink; }
+
+  /* ── Stats ── */
+  .stat-card {
+    @apply bg-surface border border-border rounded-lg p-4;
+  }
+  .stat-value { @apply text-2xl font-bold font-mono text-ink; }
+  .stat-label { @apply text-xs text-muted mt-1; }
+
+  /* ── Table ── */
+  .table-container { @apply overflow-x-auto; }
+  .table { @apply w-full text-sm; }
+  .table th {
+    @apply text-left text-xs text-muted font-medium uppercase tracking-wider
+           px-4 py-3 border-b border-border bg-surface;
+  }
+  .table td { @apply px-4 py-3 border-b border-border/50 text-ink; }
+  .table tr:hover td { @apply bg-surface2; }
+  .table tr:last-child td { @apply border-b-0; }
+
+  /* ── Buttons ── */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium
+           transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-primary { @apply btn bg-gold text-bg hover:bg-amber; }
+  .btn-secondary {
+    @apply btn bg-surface2 text-ink border border-border2
+           hover:bg-surface hover:border-border;
+  }
+  .btn-danger  { @apply btn bg-red-dim text-red border border-red/20 hover:bg-red/20; }
+  .btn-ghost   { @apply btn text-muted hover:text-ink hover:bg-surface2; }
+  .btn-sm      { @apply px-3 py-1.5 text-xs; }
+  .btn-lg      { @apply px-6 py-3 text-base; }
+
+  /* ── Status badges ── */
+  .badge { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium font-mono; }
+  .badge-draft        { @apply badge bg-surface2 text-muted border border-border; }
+  .badge-pending      { @apply badge bg-amber-dim text-amber border border-amber/20; }
+  .badge-review       { @apply badge bg-blue-dim text-blue border border-blue/20; }
+  .badge-registered   { @apply badge bg-green-dim text-green border border-green/20; }
+  .badge-rejected     { @apply badge bg-red-dim text-red border border-red/20; }
+  .badge-forwarded    { @apply badge bg-teal-dim text-teal border border-teal/20; }
+  .badge-confirmed    { @apply badge bg-green-dim text-green border border-green/20; }
+  .badge-failed       { @apply badge bg-red-dim text-red border border-red/20; }
+  .badge-teal         { @apply badge bg-teal-dim text-teal border border-teal/20; }
+  .badge-blue         { @apply badge bg-blue-dim text-blue border border-blue/20; }
+  .badge-amber        { @apply badge bg-amber-dim text-amber border border-amber/20; }
+
+  /* ── Forms ── */
+  .form-group { @apply flex flex-col gap-1.5 mb-4; }
+  .form-label { @apply text-xs text-muted font-medium uppercase tracking-wider; }
+  .form-input {
+    @apply w-full bg-surface2 border border-border2 rounded px-3 py-2.5 text-sm text-ink
+           placeholder:text-muted/50 focus:outline-none focus:border-gold
+           transition-colors;
+  }
+  .form-input:focus { box-shadow: 0 0 0 3px rgba(212,168,75,0.1); }
+  .form-textarea { @apply form-input resize-none; }
+  .form-select  { @apply form-input appearance-none; }
+  .form-hint    { @apply text-xs text-muted; }
+  .form-error   { @apply text-xs text-red; }
+
+  /* ── Timeline ── */
+  .timeline { @apply relative pl-6; }
+  .timeline::before {
+    content: '';
+    @apply absolute left-2 top-0 bottom-0 w-px bg-border;
+  }
+  .timeline-item { @apply relative mb-6; }
+  .timeline-dot {
+    @apply absolute -left-6 top-1 w-4 h-4 rounded-full border-2
+           border-surface bg-surface2 flex items-center justify-center;
+    transform: translateX(6px);
+  }
+  .timeline-dot.dot-gold    { @apply border-gold bg-gold-dim; }
+  .timeline-dot.dot-green   { @apply border-green bg-green-dim; }
+  .timeline-dot.dot-red     { @apply border-red bg-red-dim; }
+  .timeline-dot.dot-teal    { @apply border-teal bg-teal-dim; }
+  .timeline-dot.dot-blue    { @apply border-blue bg-blue-dim; }
+  .timeline-content { @apply bg-surface border border-border rounded-lg p-4; }
+
+  /* ── Page heading ── */
+  .page-title {
+    @apply text-xl font-serif text-ink mb-1;
+  }
+  .page-subtitle { @apply text-sm text-muted mb-6; }
+
+  /* ── Divider ── */
+  .divider { @apply border-t border-border my-4; }
+
+  /* ── Empty state ── */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+  .empty-state-icon { @apply text-5xl mb-4 text-muted/40; }
+  .empty-state-title { @apply text-base font-medium text-ink mb-1; }
+  .empty-state-desc  { @apply text-sm text-muted max-w-xs; }
+
+  /* ── Role pill ── */
+  .role-pill {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+           text-xs font-medium bg-gold-dim text-gold border border-gold-border;
+  }
+}

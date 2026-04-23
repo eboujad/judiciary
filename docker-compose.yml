@@ -1,0 +1,118 @@
+version: '3.9'
+
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB:       judiciary_db
+      POSTGRES_USER:     judiciary
+      POSTGRES_PASSWORD: judiciary
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judiciary"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+  # ── MinIO (S3-compatible local file storage) ──────────────────────────────
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER:     judiciary
+      MINIO_ROOT_PASSWORD: judiciary123
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  # ── Django backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py loaddata apps/cases/fixtures/court_forms.json &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./backend:/app
+      - media_data:/app/mediafiles
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgres://judiciary:judiciary@db:5432/judiciary_db
+      REDIS_URL:    redis://redis:6379/0
+      USE_S3:       "False"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  # ── Celery worker ─────────────────────────────────────────────────────────
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A config worker --loglevel=info --concurrency=2
+    volumes:
+      - ./backend:/app
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgres://judiciary:judiciary@db:5432/judiciary_db
+      REDIS_URL:    redis://redis:6379/0
+    depends_on:
+      - backend
+      - redis
+
+  # ── Celery beat (scheduled tasks) ────────────────────────────────────────
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./backend:/app
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgres://judiciary:judiciary@db:5432/judiciary_db
+      REDIS_URL:    redis://redis:6379/0
+    depends_on:
+      - celery
+
+  # ── React frontend (dev) ──────────────────────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:
+  redis_data:
+  minio_data:
+  media_data:
