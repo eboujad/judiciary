@@ -30,7 +30,7 @@ class LogoutView(APIView):
             return Response({'detail': 'Successfully logged out.'})
         except Exception:
             return Response(
-                {'detail': 'Invalid token.'},
+                {'detail': 'Invalid or missing token.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -88,5 +88,13 @@ class AdminUserListView(generics.ListCreateAPIView):
         return [IsSystemAdmin()]
 
     def perform_create(self, serializer):
-        role = self.request.data.get('role', 'public_user')
+        from apps.users.models import UserRole
+        from rest_framework.exceptions import ValidationError
+        STAFF_ROLES = {
+            UserRole.ACCOUNTS_DEPT, UserRole.REGISTRAR, UserRole.CHIEF_JUSTICE,
+            UserRole.JUDGE, UserRole.JUDGE_CLERK, UserRole.INTERPRETER,
+        }
+        role = self.request.data.get('role', '')
+        if role not in STAFF_ROLES:
+            raise ValidationError({'role': f'Invalid or unpermitted role: "{role}"'})
         serializer.save(role=role)

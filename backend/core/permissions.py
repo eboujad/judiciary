@@ -78,8 +78,8 @@ class IsLawyerOrInternal(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if request.user.role == UserRole.LAWYER:
-            # Lawyers can only see cases they submitted (or their firm submitted)
             from apps.cases.models import Case
             if isinstance(obj, Case):
                 return obj.submitted_by.firm == request.user.lawyer_profile.firm
+            return False
         return True

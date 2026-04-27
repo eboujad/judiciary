@@ -192,11 +192,11 @@ class Case(models.Model):
         from django.utils import timezone
         court_code = {
             'cadi': 'CA', 'magistrate': 'MC',
-            'high': 'HC', 'appeal': 'CA', 'supreme': 'SC',
+            'high': 'HC', 'appeal': 'AP', 'supreme': 'SC',
         }.get(self.court, 'XX')
         year = timezone.now().year
-        # Count cases registered this year for this court tier
-        count = Case.objects.filter(
+        # select_for_update prevents duplicate sequence numbers under concurrent registrations
+        count = Case.objects.select_for_update().filter(
             court=self.court,
             registered_at__year=year,
             case_number__isnull=False,

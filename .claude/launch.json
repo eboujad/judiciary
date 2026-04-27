@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend — Vite Dev Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "Backend — Django Dev Server",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["manage.py", "runserver", "0.0.0.0:8000"],
+      "port": 8000
+    },
+    {
+      "name": "Celery Worker",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=2"],
+      "port": 8000
+    },
+    {
+      "name": "Celery Beat (Scheduler)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "celery", "-A", "config", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"],
+      "port": 8000
+    }
+  ]
+}

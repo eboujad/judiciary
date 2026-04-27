@@ -26,7 +26,7 @@ class MUSUClient:
         self.base_url    = settings.MUSU_API_BASE_URL
         self.merchant_id = settings.MUSU_MERCHANT_ID
         self.api_key     = settings.MUSU_API_KEY
-        self.mock        = getattr(settings, 'USE_MUSU_MOCK', True)
+        self.mock        = getattr(settings, 'USE_MUSU_MOCK', False)
 
     def _headers(self):
         return {

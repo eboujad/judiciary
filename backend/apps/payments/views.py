@@ -171,7 +171,8 @@ class MUSUCallbackView(APIView):
         reference      = payload.get('reference')
         musu_status    = payload.get('status')
         transaction_id = payload.get('transaction_id', '')
-        amount_paid    = Decimal(str(payload.get('amount_paid', '0')))
+        raw_amount     = payload.get('amount_paid')
+        amount_paid    = Decimal(str(raw_amount)) if raw_amount is not None else None
 
         if not reference:
             return Response({'detail': 'Missing reference.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -189,7 +190,7 @@ class MUSUCallbackView(APIView):
         if musu_status == 'confirmed':
             _confirm_payment(
                 payment=payment,
-                amount_paid=amount_paid or payment.amount_due,
+                amount_paid=amount_paid if amount_paid is not None else payment.amount_due,
                 transaction_id=transaction_id,
                 raw_payload=payload,
             )

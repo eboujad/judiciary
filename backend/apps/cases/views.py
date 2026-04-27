@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
+from apps.users.models import UserRole
 from core.permissions import IsLawyer, IsAccountsDept, IsRegistrar, IsLawyerOrInternal
 from .models import Case, CaseStatus, CourtForm, SubmissionNote
 from .serializers import (
@@ -50,7 +51,7 @@ class CaseListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         qs   = Case.objects.select_related('submitted_by__user', 'submitted_by__firm')
-        if user.role == 'lawyer':
+        if user.role == UserRole.LAWYER:
             # Lawyers see only their firm's cases
             return qs.filter(submitted_by__firm=user.lawyer_profile.firm)
         return qs.all()  # Staff see all
@@ -68,7 +69,7 @@ class CaseDetailView(generics.RetrieveAPIView):
             'selected_forms__form', 'submission_notes__author',
             'documents', 'payment',
         ).select_related('submitted_by__user', 'submitted_by__firm')
-        if user.role == 'lawyer':
+        if user.role == UserRole.LAWYER:
             return qs.filter(submitted_by__firm=user.lawyer_profile.firm)
         return qs.all()
 
@@ -93,7 +94,7 @@ class CaseSubmitView(APIView):
         # Payment must be confirmed
         try:
             payment = case.payment
-        except Exception:
+        except AttributeError:
             return Response(
                 {'detail': 'No payment record found. Initiate payment first.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -227,8 +228,6 @@ class CaseResubmitView(APIView):
         )
         with transaction.atomic():
             case.transition_to(CaseStatus.RESUBMITTED, actor=request.user)
-            # Then immediately move to PENDING_ACCOUNTS
-            case.transition_to(CaseStatus.PENDING_ACCOUNTS, actor=request.user)
 
         from apps.notifications.tasks import notify_case_resubmitted
         notify_case_resubmitted.delay(str(case.id))

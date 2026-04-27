@@ -1,9 +1,11 @@
+from django.db import transaction
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 
+from apps.users.models import UserRole
 from core.permissions import IsLawyerOrInternal, IsSystemAdmin
 from apps.cases.models import Case, CaseStatus
 from .models import Document
@@ -35,7 +37,7 @@ class DocumentUploadView(APIView):
             )
 
         # Lawyers can only upload to their own firm's cases
-        if request.user.role == 'lawyer':
+        if request.user.role == UserRole.LAWYER:
             if case.submitted_by.firm != request.user.lawyer_profile.firm:
                 return Response(
                     {'detail': 'You do not have permission to upload to this case.'},
@@ -98,16 +100,20 @@ class DocumentDeleteView(APIView):
     permission_classes = [IsLawyerOrInternal]
 
     def delete(self, request, doc_id):
-        document = get_object_or_404(Document, id=doc_id, is_active=True)
-        case     = document.case
+        with transaction.atomic():
+            try:
+                document = Document.objects.select_for_update().get(id=doc_id, is_active=True)
+            except Document.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
 
-        if request.user.role == 'lawyer':
-            if case.status != CaseStatus.DRAFT or case.submitted_by.firm != request.user.lawyer_profile.firm:
-                return Response(
-                    {'detail': 'You cannot delete this document.'},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+            case = document.case
+            if request.user.role == UserRole.LAWYER:
+                if case.status != CaseStatus.DRAFT or case.submitted_by.firm != request.user.lawyer_profile.firm:
+                    return Response(
+                        {'detail': 'You cannot delete this document.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
 
-        document.is_active = False
-        document.save(update_fields=['is_active'])
+            document.is_active = False
+            document.save(update_fields=['is_active'])
         return Response(status=status.HTTP_204_NO_CONTENT)

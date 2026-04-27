@@ -24,6 +24,8 @@ class AuditMiddleware:
 
     def __call__(self, request):
         _thread_local.request = request
-        response = self.get_response(request)
-        _thread_local.request = None
+        try:
+            response = self.get_response(request)
+        finally:
+            _thread_local.request = None
         return response

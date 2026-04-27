@@ -47,13 +47,13 @@ class CaseListSerializer(serializers.ModelSerializer):
     def get_total_fee(self, obj):
         try:
             return str(obj.payment.amount_due)
-        except Exception:
+        except AttributeError:
             return None
 
     def get_payment_status(self, obj):
         try:
             return obj.payment.status
-        except Exception:
+        except AttributeError:
             return None
 
 

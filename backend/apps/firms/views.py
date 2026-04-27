@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
+from apps.users.models import UserRole
 from core.permissions import IsSystemAdmin, IsLawyer
 from .models import LawFirm, Lawyer, FirmStatus
 from .serializers import (
@@ -47,7 +48,7 @@ class FirmApproveView(APIView):
         firm.approved_at = timezone.now()
         firm.approved_by = request.user
         firm.save(update_fields=['status', 'approved_at', 'approved_by'])
-        return Response(FirmSerializer(firm).data if False else LawFirmSerializer(firm).data)
+        return Response(LawFirmSerializer(firm).data)
 
 
 class FirmLawyersView(generics.ListCreateAPIView):
@@ -58,7 +59,9 @@ class FirmLawyersView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_firm(self):
-        return get_object_or_404(LawFirm, id=self.kwargs['firm_id'])
+        if not hasattr(self, '_firm'):
+            self._firm = get_object_or_404(LawFirm, id=self.kwargs['firm_id'])
+        return self._firm
 
     def get_queryset(self):
         return Lawyer.objects.filter(firm=self.get_firm()).select_related('user')
@@ -75,7 +78,7 @@ class FirmLawyersView(generics.ListCreateAPIView):
         super().check_permissions(request)
         firm = self.get_firm()
         # Firm admin can manage their own lawyers; system admin can manage any
-        if request.user.role not in ['system_admin']:
+        if request.user.role not in [UserRole.SYSTEM_ADMIN]:
             if not hasattr(request.user, 'managed_firm') or request.user.managed_firm != firm:
                 self.permission_denied(request, message='You do not manage this firm.')
 
