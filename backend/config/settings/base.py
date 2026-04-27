@@ -83,8 +83,12 @@ TEMPLATES = [
 ]
 
 # ── Database ───────────────────────────────────────────────────────────────
+import dj_database_url
 DATABASES = {
-    'default': env.db('DATABASE_URL', default='postgres://judiciary:judiciary@localhost:5432/judiciary_db')
+    'default': dj_database_url.config(
+        default='postgres://judiciary:judiciary@localhost:5432/judiciary_db',
+        conn_max_age=600,
+    )
 }
 
 # ── Custom User ────────────────────────────────────────────────────────────
